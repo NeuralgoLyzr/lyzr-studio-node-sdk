@@ -11,6 +11,8 @@ class LyzrAgent {
     x: 'right: 20px',
     y: 'bottom: 20px'
   };
+  private creditWarningModal: HTMLElement | null = null;
+  private creditErrorModal: HTMLElement | null = null;
 
   constructor(publicKey: string) {
     console.log('Initializing LyzrAgent');
@@ -138,6 +140,7 @@ class LyzrAgent {
       }
       if (member) {
         this.showAppContent();
+        this.checkCredits();
         this.hideLoginModal();
       } else {
         this.hideAppContent();
@@ -294,7 +297,7 @@ class LyzrAgent {
     badgeElement.innerHTML = badgeHtml;
     document.body.appendChild(badgeElement);
     this.badge = badgeElement.firstElementChild as HTMLElement;
-  
+
     // Add click handler for the entire badge
     if (this.badge) {
       // Add hover effect
@@ -304,7 +307,7 @@ class LyzrAgent {
       this.badge.addEventListener('mouseout', () => {
         this.badge!.style.transform = 'scale(1)';
       });
-  
+
       // Add click handler to redirect to Lyzr Studio
       this.badge.addEventListener('click', () => {
         window.open('https://studio.lyzr.ai/', '_blank');
@@ -353,6 +356,251 @@ class LyzrAgent {
     console.log('Hiding login modal');
     if (this.modal) {
       this.modal.style.display = 'none';
+    }
+  }
+  public async checkCredits(): Promise<void> {
+    try {
+      const response = await fetch('https://pagos-prod.studio.lyzr.ai/api/v1/usages/current', {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+          'authorization': `Bearer ${this.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const totalCredits = (data.recurring_credits || 0) + (data.paid_credits || 0) + (data.used_credits || 0);
+      const usedCredits = data.used_credits || 0;
+      const remainingCredits =  (data.recurring_credits || 0) + (data.paid_credits || 0);
+
+      if (remainingCredits <= 0) {
+        this.showCreditErrorModal();
+      } else if (remainingCredits <= 20) {
+        this.showCreditWarningModal(remainingCredits);
+      }
+    } catch (error) {
+      console.error('Error checking credits:', error);
+    }
+  }
+
+  private createCreditErrorModal() {
+    const modalHtml = `
+      <div id="lyzr-credit-error-modal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      ">
+        <div style="
+          position: relative;
+          background: white;
+          padding: 32px;
+          border-radius: 16px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+          width: 400px;
+          text-align: center;
+          font-family: system-ui, -apple-system, sans-serif;
+        ">
+          <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="
+            height: 40px;
+            margin-bottom: 24px;
+          ">
+          <h2 style="
+            margin: 0 0 12px;
+            color: #dc2626;
+            font-size: 24px;
+            font-weight: 600;
+          ">Credits Exhausted</h2>
+          <p style="
+            margin: 0 0 24px;
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+          ">You've used all your available credits. Please recharge to continue using the service.</p>
+          <button id="lyzr-credit-error-redirect" style="
+            width: 100%;
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          ">View Credit Status</button>
+        </div>
+      </div>
+    `;
+
+    const modalElement = document.createElement('div');
+    modalElement.innerHTML = modalHtml;
+    document.body.appendChild(modalElement);
+    this.creditErrorModal = modalElement.firstElementChild as HTMLElement;
+
+    // Add event listeners
+    const closeButton = document.getElementById('lyzr-credit-error-close');
+    const redirectButton = document.getElementById('lyzr-credit-error-redirect');
+
+    if (closeButton) {
+      closeButton.addEventListener('click', () => this.hideCreditErrorModal());
+    }
+
+    if (redirectButton) {
+      redirectButton.addEventListener('click', () => {
+        window.open('https://studio.lyzr.ai/organization', '_blank');
+      });
+    }
+  }
+
+  private createCreditWarningModal() {
+    const modalHtml = `
+      <div id="lyzr-credit-warning-modal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      ">
+        <div style="
+          position: relative;
+          background: white;
+          padding: 32px;
+          border-radius: 16px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+          width: 400px;
+          text-align: center;
+          font-family: system-ui, -apple-system, sans-serif;
+        ">
+          <button id="lyzr-credit-warning-close" style="
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            color: #666;
+          ">×</button>
+          <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="
+            height: 40px;
+            margin-bottom: 24px;
+          ">
+          <h2 style="
+            margin: 0 0 12px;
+            color: #f59e0b;
+            font-size: 24px;
+            font-weight: 600;
+          ">Low Credits Warning</h2>
+          <p id="lyzr-credit-warning-message" style="
+            margin: 0 0 24px;
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+          ">Your credits are running low. Consider topping up to ensure uninterrupted service.</p>
+          <div style="display: flex; gap: 12px;">
+            <button id="lyzr-credit-warning-continue" style="
+              flex: 1;
+              padding: 12px 24px;
+              background: #e5e7eb;
+              color: #374151;
+              border: none;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            ">Continue</button>
+            <button id="lyzr-credit-warning-redirect" style="
+              flex: 1;
+              padding: 12px 24px;
+              background: #2563eb;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            ">Top Up Now</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const modalElement = document.createElement('div');
+    modalElement.innerHTML = modalHtml;
+    document.body.appendChild(modalElement);
+    this.creditWarningModal = modalElement.firstElementChild as HTMLElement;
+
+    // Add event listeners
+    const closeButton = document.getElementById('lyzr-credit-warning-close');
+    const continueButton = document.getElementById('lyzr-credit-warning-continue');
+    const redirectButton = document.getElementById('lyzr-credit-warning-redirect');
+
+    if (closeButton) {
+      closeButton.addEventListener('click', () => this.hideCreditWarningModal());
+    }
+
+    if (continueButton) {
+      continueButton.addEventListener('click', () => this.hideCreditWarningModal());
+    }
+
+    if (redirectButton) {
+      redirectButton.addEventListener('click', () => {
+        window.open('https://studio.lyzr.ai/organization', '_blank');
+      });
+    }
+  }
+
+  private showCreditErrorModal() {
+    if (!this.creditErrorModal) {
+      this.createCreditErrorModal();
+    }
+    if (this.creditErrorModal) {
+      this.creditErrorModal.style.display = 'flex';
+    }
+  }
+
+  private hideCreditErrorModal() {
+    if (this.creditErrorModal) {
+      this.creditErrorModal.style.display = 'none';
+    }
+  }
+
+  private showCreditWarningModal(remainingCredits: number) {
+    if (!this.creditWarningModal) {
+      this.createCreditWarningModal();
+    }
+    if (this.creditWarningModal) {
+      const messageElement = document.getElementById('lyzr-credit-warning-message');
+      if (messageElement) {
+        messageElement.textContent = `You have ${remainingCredits} credits remaining. Consider topping up to ensure uninterrupted service.`;
+      }
+      this.creditWarningModal.style.display = 'flex';
+    }
+  }
+
+  private hideCreditWarningModal() {
+    if (this.creditWarningModal) {
+      this.creditWarningModal.style.display = 'none';
     }
   }
 }

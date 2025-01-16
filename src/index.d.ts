@@ -7,6 +7,7 @@ declare module 'lyzr-agent' {
     showAppContent(): void;
     logout(): void;
     onAuthStateChange(callback: (isAuthenticated: boolean) => void): () => void;
+    checkCredits(): Promise<void>;
   }
 
   const lyzr: LyzrAgent;

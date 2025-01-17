@@ -191,16 +191,15 @@ class LyzrAgent {
           text-align: center;
           font-family: system-ui, -apple-system, sans-serif;
         ">
-          <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="
-            height: 40px;
-            margin-bottom: 24px;
-          ">
-          <h2 style="
+         <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+            <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="height: 40px;">
+          </div>
+         <h2 style="
             margin: 0 0 12px;
             color: #333;
             font-size: 24px;
             font-weight: 600;
-          ">Sign in with Lyzr Agents Platform</h2>
+          ">Sign in with Lyzr Agent Studio</h2>
           <p style="
             margin: 0 0 32px;
             color: #666;
@@ -231,6 +230,11 @@ class LyzrAgent {
             </svg>
             Sign in with Google
           </button>
+           <p style="
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+          ">*Signup using google on <a href="https://studio.lyzr.ai/auth/sign-up" target="_blank" style="color:rgb(0, 40, 126); text-decoration: none;">Lyzr Agent Studio</a></p>
         </div>
       </div>
     `;
@@ -376,7 +380,7 @@ class LyzrAgent {
       const data = await response.json();
       const totalCredits = (data.recurring_credits || 0) + (data.paid_credits || 0) + (data.used_credits || 0);
       const usedCredits = data.used_credits || 0;
-      const remainingCredits =  (data.recurring_credits || 0) + (data.paid_credits || 0);
+      const remainingCredits = (data.recurring_credits || 0) + (data.paid_credits || 0);
 
       if (remainingCredits <= 0) {
         this.showCreditErrorModal();
@@ -412,10 +416,9 @@ class LyzrAgent {
           text-align: center;
           font-family: system-ui, -apple-system, sans-serif;
         ">
-          <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="
-            height: 40px;
-            margin-bottom: 24px;
-          ">
+          <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+            <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="height: 40px;">
+          </div>
           <h2 style="
             margin: 0 0 12px;
             color: #dc2626;
@@ -428,18 +431,39 @@ class LyzrAgent {
             font-size: 16px;
             line-height: 1.5;
           ">You've used all your available credits. Please recharge to continue using the service.</p>
-          <button id="lyzr-credit-error-redirect" style="
-            width: 100%;
-            padding: 12px 24px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          ">View Credit Status</button>
+           <div style="
+            display: flex;
+            gap: 12px;
+          ">
+            <button id="lyzr-credit-error-redirect" style="
+              flex: 1;
+              padding: 12px 24px;
+              background:rgba(129, 64, 241, 0.75);
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            ">View Credit Status</button>
+            <button id="lyzr-logout-button" style="
+              flex: 1;
+              padding: 12px 12px;
+              background: white;
+        padding: 8px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+              color: black;
+              border:2px;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            ">Logout</button>
+          </div>
         </div>
       </div>
     `;
@@ -452,7 +476,7 @@ class LyzrAgent {
     // Add event listeners
     const closeButton = document.getElementById('lyzr-credit-error-close');
     const redirectButton = document.getElementById('lyzr-credit-error-redirect');
-
+    const logoutButton = document.getElementById('lyzr-logout-button');
     if (closeButton) {
       closeButton.addEventListener('click', () => this.hideCreditErrorModal());
     }
@@ -460,6 +484,12 @@ class LyzrAgent {
     if (redirectButton) {
       redirectButton.addEventListener('click', () => {
         window.open('https://studio.lyzr.ai/organization', '_blank');
+      });
+    }
+    if (logoutButton) {
+      logoutButton.addEventListener('click', async () => {
+        await this.logout();
+        this.hideCreditErrorModal();
       });
     }
   }

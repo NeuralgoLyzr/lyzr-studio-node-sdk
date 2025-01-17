@@ -187,7 +187,7 @@ class LyzrAgent {
           padding: 40px;
           border-radius: 16px;
           box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-          width: 400px;
+          width: 600px;
           text-align: center;
           font-family: system-ui, -apple-system, sans-serif;
         ">
@@ -446,7 +446,7 @@ class LyzrAgent {
               font-weight: 500;
               cursor: pointer;
               transition: all 0.2s ease;
-            ">View Credit Status</button>
+            ">Get Credits</button>
             <button id="lyzr-logout-button" style="
               flex: 1;
               padding: 12px 12px;

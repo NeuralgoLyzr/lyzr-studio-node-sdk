@@ -5,7 +5,9 @@ class LyzrAgent {
   private badge: HTMLElement | null = null;
   private modal: HTMLElement | null = null;
   private isAuthenticated = false;
+  private isLoading = false;
   public token: string | null = null;
+  private publicKey: string = ""
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
   private badgePosition = {
     x: 'right: 20px',
@@ -20,6 +22,7 @@ class LyzrAgent {
       throw new Error('Public key is required');
     }
 
+    this.publicKey = publicKey
     // Initialize Memberstack correctly
     this.memberstack = memberstackDom.init({
       publicKey,
@@ -38,6 +41,10 @@ class LyzrAgent {
       console.log('Hiding app content');
       this.hideAppContent();
 
+      // Check for token in url for previous authentication
+      console.log('Checking url for token query param')
+      this.checkBearerAuth();
+
       // Check auth status and show/hide content accordingly
       console.log('Checking auth status');
       await this.checkAuthStatus();
@@ -51,6 +58,36 @@ class LyzrAgent {
       console.error('Error during initialization:', error);
       throw error;
     }
+  }
+
+  private async checkBearerAuth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if(token) {
+      this.token = token
+      fetch('https://client.memberstack.com/member', {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+          'Authorization': `Bearer ${token}`,
+          "x-api-key": this.publicKey,
+        }
+      }).then(async (res) => {
+        const response: any = await res.json()
+        localStorage.setItem("_ms-mem", JSON.stringify(response?.data ?? "{}"))
+        localStorage.setItem("_ms-mid", token)
+        const date = new Date();
+        let expires = "";
+        date.setTime(date.getTime() + (15*24*60*60*1000));
+        expires = "; expires=" + date.toUTCString();
+        document.cookie = "_ms-mid=" + token + expires
+        this.notifyAuthStateChange()
+        window.location.href = "/"
+      });
+    }
+
   }
 
   private setupAuthStateListener() {
@@ -201,12 +238,6 @@ class LyzrAgent {
             font-size: 24px;
             font-weight: 600;
           ">Sign in with Lyzr Agent Studio</h2>
-          <p style="
-            margin: 0 0 32px;
-            color: #666;
-            font-size: 16px;
-            line-height: 1.5;
-          ">Connect with your Google account to get started</p>
           <button id="lyzr-google-login" style="
             display: flex;
             align-items: center;
@@ -223,7 +254,7 @@ class LyzrAgent {
             cursor: pointer;
             transition: all 0.2s ease;
           ">
-            Sign in
+            ${this.isLoading? "Loading ...": "Sign in"}
           </button>
         </div>
       </div>
@@ -309,6 +340,7 @@ class LyzrAgent {
       });
     }
   }
+
   setBadgePosition(x?: string, y?: string) {
     console.warn(this.isAuthenticated);
     if (!this.isAuthenticated) {
@@ -353,6 +385,7 @@ class LyzrAgent {
       this.modal.style.display = 'none';
     }
   }
+
   public async checkCredits(): Promise<void> {
     try {
       const response = await fetch('https://pagos-prod.studio.lyzr.ai/api/v1/usages/current', {

@@ -10,7 +10,8 @@ class LyzrAgent {
   private publicKey: string = ""
   private apiKey: string = ""
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
-  private pagosUrl = "https://pagos-prod.studio.lyzr.ai"
+  private pagosUrl = "https://pagos-dev.test.studio.lyzr.ai"
+  private agentStudioUrl = "https://dev.test.studio.lyzr.ai/"
   private badgePosition = {
     x: 'right: 20px',
     y: 'bottom: 20px'
@@ -372,7 +373,7 @@ class LyzrAgent {
   }
 
   private handleAgentStudioLogin() {
-    window.location.href = `http://localhost:5173/?redirect=${window.location.origin}`    
+    window.location.href = `${this.agentStudioUrl}/?redirect=${window.location.origin}`    
   }
 
   private createBadge() {
@@ -740,7 +741,7 @@ class LyzrAgent {
 }
 
 // Create and export a single instance
-const lyzrInstance = new LyzrAgent('pk_c14a2728e715d9ea67bf');
+const lyzrInstance = new LyzrAgent('pk_sb_d2dcef537a9212e156d0');
 
 // Explicitly set as global
 if (typeof window !== 'undefined') {

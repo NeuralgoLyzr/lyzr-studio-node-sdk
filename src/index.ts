@@ -10,6 +10,7 @@ class LyzrAgent {
   private publicKey: string = ""
   private apiKey: string = ""
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
+  private pagosUrl = "https://pagos-prod.studio.lyzr.ai"
   private badgePosition = {
     x: 'right: 20px',
     y: 'bottom: 20px'
@@ -44,7 +45,7 @@ class LyzrAgent {
 
       // Check for token in url for previous authentication
       console.log('Checking url for token query param')
-      this.checkBearerAuth();
+      await this.checkBearerAuth();
 
       // Check auth status and show/hide content accordingly
       console.log('Checking auth status');
@@ -67,7 +68,7 @@ class LyzrAgent {
 
     if(token) {
       this.token = token
-      fetch('https://client.memberstack.com/member', {
+      const res  = await fetch('https://client.memberstack.com/member', {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -75,18 +76,19 @@ class LyzrAgent {
           'Authorization': `Bearer ${token}`,
           "x-api-key": this.publicKey,
         }
-      }).then(async (res) => {
-        const response: any = await res.json()
-        localStorage.setItem("_ms-mem", JSON.stringify(response?.data ?? "{}"))
-        localStorage.setItem("_ms-mid", token)
-        const date = new Date();
-        let expires = "";
-        date.setTime(date.getTime() + (15*24*60*60*1000));
-        expires = "; expires=" + date.toUTCString();
-        document.cookie = "_ms-mid=" + token + expires
-        this.notifyAuthStateChange()
-        window.location.href = "/"
-      });
+      })
+      const response: any = await res.json()
+      localStorage.setItem("_ms-mem", JSON.stringify(response?.data ?? "{}"))
+      localStorage.setItem("_ms-mid", token)
+      const date = new Date();
+      let expires = "";
+      date.setTime(date.getTime() + (15*24*60*60*1000));
+      expires = "; expires=" + date.toUTCString();
+      document.cookie = "_ms-mid=" + token + expires + "; domain=studio.lyzr.ai"
+      document.cookie = "user_id=" + response?.data?.id
+      this.notifyAuthStateChange()
+
+        return null;
     }
 
   }
@@ -127,7 +129,7 @@ class LyzrAgent {
         return null;
       }
 
-      const response = await fetch('https://pagos-prod.studio.lyzr.ai/api/v1/keys/', {
+      const response = await fetch(`${this.pagosUrl}/api/v1/keys/`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -157,7 +159,7 @@ class LyzrAgent {
         return null;
       }
 
-      const response = await fetch(`https://pagos-prod.studio.lyzr.ai/api/v1/keys/user?api_key=${this.apiKey}`, {
+      const response = await fetch(`${this.pagosUrl}/api/v1/keys/user?api_key=${this.apiKey}`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -256,7 +258,7 @@ class LyzrAgent {
           padding: 40px;
           border-radius: 16px;
           box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-          width: 400px;
+          width: 600px;
           text-align: center;
           font-family: system-ui, -apple-system, sans-serif;
         ">
@@ -269,6 +271,13 @@ class LyzrAgent {
             font-size: 24px;
             font-weight: 600;
           ">Sign in with Lyzr Agent Studio</h2>
+          <p>or</p>
+          <p style="
+            margin: 0 0 32px;
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+          ">Connect with your Google account to get started</p>
           <button id="lyzr-google-login" style="
             display: flex;
             align-items: center;
@@ -276,7 +285,7 @@ class LyzrAgent {
             gap: 12px;
             width: 100%;
             padding: 12px 24px;
-            border: 1px solid #c1c1c1;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
             background: white;
             color: #333;
@@ -285,8 +294,38 @@ class LyzrAgent {
             cursor: pointer;
             transition: all 0.2s ease;
           ">
-            ${this.isLoading? "Loading ...": "Sign in"}
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
           </button>
+          <button id="lyzr-studio-login" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 24px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          ">
+            Sign in with Lyzr Agent Studio
+          </button>
+           <p style="
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+          ">*Signup using google on <a href="https://studio.lyzr.ai/auth/sign-up" target="_blank" style="color:rgb(0, 40, 126); text-decoration: none;">Lyzr Agent Studio</a></p>
         </div>
       </div>
     `;
@@ -307,8 +346,15 @@ class LyzrAgent {
 
     // Add Google login button click handler
     const googleButton = document.getElementById('lyzr-google-login');
+    const studioButton = document.getElementById('lyzr-studio-login');
     if (googleButton) {
       googleButton.addEventListener('click', () => this.handleGoogleLogin());
+    } else {
+      console.error('Failed to find Google login button');
+    }
+
+    if (studioButton) {
+      studioButton.addEventListener('click', () => this.handleAgentStudioLogin());
     } else {
       console.error('Failed to find Google login button');
     }
@@ -316,14 +362,17 @@ class LyzrAgent {
 
   private async handleGoogleLogin() {
     try {
-      // await this.memberstack.loginWithProvider({
-      //   provider: "google"
-      // });
-      // await this.checkAuthStatus();
-      window.location.href = `https://dev.test.studio.lyzr.ai/?redirect=${window.location.origin}`
+      await this.memberstack.loginWithProvider({
+        provider: "google"
+      });
+      await this.checkAuthStatus();
     } catch (error) {
       console.error('Error during Google login:', error);
     }
+  }
+
+  private handleAgentStudioLogin() {
+    window.location.href = `http://localhost:5173/?redirect=${window.location.origin}`    
   }
 
   private createBadge() {
@@ -419,7 +468,7 @@ class LyzrAgent {
 
   public async checkCredits(): Promise<void> {
     try {
-      const response = await fetch('https://pagos-prod.studio.lyzr.ai/api/v1/usages/current', {
+      const response = await fetch(`${this.pagosUrl}/api/v1/usages/current`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',

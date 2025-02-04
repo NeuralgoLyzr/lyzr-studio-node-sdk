@@ -3,6 +3,7 @@ declare module 'lyzr-agent' {
     init(publicKey: string): Promise<LyzrAgent>;
     setBadgePosition(x?: string, y?: string): void;
     getKeys(): Promise<string[]>;
+    getKeysUser(): Promise<any>;
     hideAppContent(): void;
     showAppContent(): void;
     logout(): void;

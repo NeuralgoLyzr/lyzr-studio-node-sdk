@@ -8,6 +8,7 @@ class LyzrAgent {
   private isLoading = false;
   public token: string | null = null;
   private publicKey: string = ""
+  private apiKey: string = ""
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
   private badgePosition = {
     x: 'right: 20px',
@@ -135,14 +136,44 @@ class LyzrAgent {
         }
       });
 
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      this.apiKey = data?.[0]?.api_key
+      return data;
+    } catch (error) {
+      console.error('Error fetching keys:', error);
+      return null;
+    }
+  }
+
+  public async getKeysUser(): Promise<any> {
+    try {
+      if (!this.token || !this.apiKey) {
+        console.error('No authentication token available');
+        return null;
+      }
+
+      const response = await fetch(`https://pagos-prod.studio.lyzr.ai/api/v1/keys/user?api_key=${this.apiKey}`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+          'authorization': `Bearer ${this.token}`
+        }
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      return data;
+      return { data, token: this.token };
     } catch (error) {
-      console.error('Error fetching keys:', error);
+      console.error('Error fetching keys user:', error);
       return null;
     }
   }

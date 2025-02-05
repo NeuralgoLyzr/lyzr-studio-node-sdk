@@ -11,7 +11,7 @@ class LyzrAgent {
   private apiKey: string = ""
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
   private pagosUrl = "https://pagos-prod.studio.lyzr.ai"
-  private agentStudioUrl = "https://studio.lyzr.ai"
+  private agentStudioUrl = "https://studio.lyzr.ai/auth/sign-in"
   private badgePosition = {
     x: 'right: 20px',
     y: 'bottom: 20px'
@@ -85,7 +85,7 @@ class LyzrAgent {
       let expires = "";
       date.setTime(date.getTime() + (15*24*60*60*1000));
       expires = "; expires=" + date.toUTCString();
-      document.cookie = "_ms-mid=" + token + expires + "; domain=studio.lyzr.ai"
+      document.cookie = "_ms-mid=" + token + expires
       document.cookie = "user_id=" + response?.data?.id
       this.notifyAuthStateChange()
 
@@ -183,6 +183,7 @@ class LyzrAgent {
 
   public async logout() {
     await this.memberstack.logout()
+    document.cookie = "_ms-mid" + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   }
 
   private hideAppContent() {

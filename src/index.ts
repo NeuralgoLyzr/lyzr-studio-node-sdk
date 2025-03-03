@@ -12,7 +12,7 @@ class LyzrAgent {
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
   private pagosUrl = "https://pagos-prod.studio.lyzr.ai"
   private agentStudioUrl = "https://studio.lyzr.ai/auth/sign-in"
-  private agentStudioUrlSignup ="https://studio.lyzr.ai/auth/sign-up"
+  private agentStudioUrlSignup = "https://studio.lyzr.ai/auth/sign-up"
   private badgePosition = {
     x: 'right: 20px',
     y: 'bottom: 20px'
@@ -34,8 +34,65 @@ class LyzrAgent {
     });
   }
 
-  public async init(publicKey: string): Promise<LyzrAgent> {
+  // public async init(publicKey: string): Promise<LyzrAgent> {
+  //   try {
+  //     console.log('Starting initialization');
+  //     // Create elements first
+  //     this.createLoginModal();
+  //     this.createBadge();
+
+  //     // Hide the app content initially
+  //     console.log('Hiding app content');
+  //     this.hideAppContent();
+
+  //     // Check for token in url for previous authentication
+  //     console.log('Checking url for token query param')
+  //     await this.checkBearerAuth();
+
+  //     // Check auth status and show/hide content accordingly
+  //     console.log('Checking auth status');
+  //     await this.checkAuthStatus();
+
+  //     // Set up auth state listener
+  //     this.setupAuthStateListener();
+
+  //     console.log('Initialization complete');
+  //     return this;
+  //   } catch (error) {
+  //     console.error('Error during initialization:', error);
+  //     throw error;
+  //   }
+  // }
+
+
+  public async init(
+    publicKey?: string,
+    config?: {
+      pagosUrl?: string;
+      agentStudioUrl?: string;
+      agentStudioUrlSignup?: string;
+    }
+  ): Promise<LyzrAgent> {
     try {
+      // Update public key if provided; else ensure one exists
+      if (publicKey) {
+        this.publicKey = publicKey;
+        // Reinitialize Memberstack with the new public key
+        this.memberstack = memberstackDom.init({
+          publicKey: this.publicKey,
+          sessionDurationDays: 30
+        });
+      } else if (!this.publicKey) {
+        throw new Error('Public key is required');
+      }
+
+      // Update URLs from config if provided, otherwise use defaults
+      if (config) {
+        this.pagosUrl = config.pagosUrl || this.pagosUrl;
+        this.agentStudioUrl = config.agentStudioUrl || this.agentStudioUrl;
+        this.agentStudioUrlSignup = config.agentStudioUrlSignup || this.agentStudioUrlSignup;
+      }
+
       console.log('Starting initialization');
       // Create elements first
       this.createLoginModal();
@@ -45,8 +102,8 @@ class LyzrAgent {
       console.log('Hiding app content');
       this.hideAppContent();
 
-      // Check for token in url for previous authentication
-      console.log('Checking url for token query param')
+      // Check for token in URL for previous authentication
+      console.log('Checking URL for token query param');
       await this.checkBearerAuth();
 
       // Check auth status and show/hide content accordingly
@@ -68,9 +125,9 @@ class LyzrAgent {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
-    if(token) {
+    if (token) {
       this.token = token
-      const res  = await fetch('https://client.memberstack.com/member', {
+      const res = await fetch('https://client.memberstack.com/member', {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -84,7 +141,7 @@ class LyzrAgent {
       localStorage.setItem("_ms-mid", token)
       const date = new Date();
       let expires = "";
-      date.setTime(date.getTime() + (15*24*60*60*1000));
+      date.setTime(date.getTime() + (15 * 24 * 60 * 60 * 1000));
       expires = "; expires=" + date.toUTCString();
       document.cookie = "_ms-mid=" + token + expires
       document.cookie = "user_id=" + response?.data?.id
@@ -140,11 +197,11 @@ class LyzrAgent {
         }
       });
 
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       this.apiKey = data?.[0]?.api_key
       return data;
@@ -310,7 +367,7 @@ class LyzrAgent {
         </button>
       </div>
     </div>
-  `;  
+  `;
     const modalElement = document.createElement('div');
     modalElement.id = 'lyzr-login-modal-container';
     modalElement.innerHTML = modalHtml;
@@ -360,10 +417,10 @@ class LyzrAgent {
   }
 
   private handleAgentStudioLogin() {
-    window.location.href = `${this.agentStudioUrl}/?redirect=${window.location.origin}`    
+    window.location.href = `${this.agentStudioUrl}/?redirect=${window.location.origin}`
   }
   private handleAgentStudioSignup() {
-    window.location.href = `${this.agentStudioUrlSignup}/?redirect=${window.location.origin}`    
+    window.location.href = `${this.agentStudioUrlSignup}/?redirect=${window.location.origin}`
   }
 
 

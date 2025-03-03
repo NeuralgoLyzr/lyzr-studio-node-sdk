@@ -34,37 +34,6 @@ class LyzrAgent {
     });
   }
 
-  // public async init(publicKey: string): Promise<LyzrAgent> {
-  //   try {
-  //     console.log('Starting initialization');
-  //     // Create elements first
-  //     this.createLoginModal();
-  //     this.createBadge();
-
-  //     // Hide the app content initially
-  //     console.log('Hiding app content');
-  //     this.hideAppContent();
-
-  //     // Check for token in url for previous authentication
-  //     console.log('Checking url for token query param')
-  //     await this.checkBearerAuth();
-
-  //     // Check auth status and show/hide content accordingly
-  //     console.log('Checking auth status');
-  //     await this.checkAuthStatus();
-
-  //     // Set up auth state listener
-  //     this.setupAuthStateListener();
-
-  //     console.log('Initialization complete');
-  //     return this;
-  //   } catch (error) {
-  //     console.error('Error during initialization:', error);
-  //     throw error;
-  //   }
-  // }
-
-
   public async init(
     publicKey?: string,
     config?: {

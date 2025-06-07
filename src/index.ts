@@ -19,6 +19,8 @@ class LyzrAgent {
   };
   private creditWarningModal: HTMLElement | null = null;
   private creditErrorModal: HTMLElement | null = null;
+  private reloginModal: HTMLElement | null = null;
+  private isLoggingOut = false;
 
   constructor(publicKey: string) {
     console.log('Initializing LyzrAgent');
@@ -139,7 +141,11 @@ class LyzrAgent {
           'authorization': `Bearer ${this.token}`
         }
       });
-
+      
+      if (response.status === 401) {
+        this.showReloginModal();
+        return null;
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -170,6 +176,11 @@ class LyzrAgent {
         }
       });
 
+      if (response.status === 401) {
+        this.showReloginModal();
+        return null;
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -185,6 +196,21 @@ class LyzrAgent {
   public async logout() {
     await this.memberstack.logout()
     document.cookie = "_ms-mid" + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  }
+
+  public async logoutWithoutReload() {
+    this.isLoggingOut = true;
+    try {
+      await this.memberstack.logout()
+      document.cookie = "_ms-mid" + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      this.token = null;
+      this.isAuthenticated = false;
+      this.notifyAuthStateChange();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      this.isLoggingOut = false;
+    }
   }
 
   private hideAppContent() {
@@ -214,7 +240,7 @@ class LyzrAgent {
       }
       if (member) {
         this.showAppContent();
-        this.checkCredits();
+        await this.checkCredits();
         this.hideLoginModal();
       } else {
         this.hideAppContent();
@@ -468,6 +494,11 @@ class LyzrAgent {
           'authorization': `Bearer ${this.token}`
         }
       });
+
+      if (response.status === 401) {
+        this.showReloginModal();
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -727,6 +758,126 @@ class LyzrAgent {
   private hideCreditWarningModal() {
     if (this.creditWarningModal) {
       this.creditWarningModal.style.display = 'none';
+    }
+  }
+
+  private createReloginModal() {
+    const modalHtml = `
+      <div id="lyzr-relogin-modal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(41, 41, 41, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      ">
+        <div style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          padding: 40px;
+          border-radius: 16px;
+          box-shadow: 0 4px 24px rgba(41, 41, 41, 0.1);
+          width: 480px;
+          max-width: 90vw;
+          text-align: center;
+          font-family: system-ui, -apple-system, sans-serif;
+        ">
+          <div style="
+            display: flex; 
+            justify-content: center; 
+            margin-bottom: 32px;
+          ">
+            <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="height: 40px;">
+          </div>
+          <h2 style="
+            margin: 0 0 16px;
+            color: #292929;
+            font-size: 20px;
+            font-weight: 600;
+          ">Session Expired</h2>
+          <p style="
+            margin: 0 0 24px;
+            color: #666;
+            font-size: 16px;
+            line-height: 1.5;
+          ">Your session has expired. Please relogin to continue.</p>
+          <button id="lyzr-relogin-button" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: #292929;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          ">
+            <span id="relogin-text">Relogin with Lyzr Agent Studio</span>
+            <span id="relogin-loader" style="display: none; margin-left: 8px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="animation: spin 1s linear infinite;">
+                <style>
+                  @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                </style>
+                <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    `;
+    const modalElement = document.createElement('div');
+    modalElement.innerHTML = modalHtml;
+    document.body.appendChild(modalElement);
+    this.reloginModal = modalElement.firstElementChild as HTMLElement;
+
+    const reloginButton = document.getElementById('lyzr-relogin-button');
+    if (reloginButton) {
+      reloginButton.addEventListener('click', async () => {
+        await this.handleRelogin();
+      });
+    }
+  }
+
+  private async handleRelogin() {
+    const reloginText = document.getElementById('relogin-text');
+    const reloginLoader = document.getElementById('relogin-loader');
+    
+    if (reloginText && reloginLoader) {
+      reloginText.style.opacity = '0.7';
+      reloginLoader.style.display = 'inline-block';
+    }
+    
+    await this.logoutWithoutReload();
+    window.location.href = `${this.agentStudioUrl}/?redirect=${window.location.origin}`;
+  }
+
+  private showReloginModal() {
+    if (!this.reloginModal) {
+      this.createReloginModal();
+    }
+    if (this.reloginModal) {
+      this.reloginModal.style.display = 'flex';
+    }
+  }
+
+  private hideReloginModal() {
+    if (this.reloginModal) {
+      this.reloginModal.style.display = 'none';
     }
   }
 }

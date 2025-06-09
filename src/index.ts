@@ -299,6 +299,18 @@ class LyzrAgent {
         ">
           <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="height: 40px;">
         </div>
+        <h2 style="
+          margin: 0 0 16px;
+          color: #292929;
+          font-size: 20px;
+          font-weight: 600;
+        ">Authentication Required</h2>
+        <p style="
+          margin: 0 0 24px;
+          color: #666;
+          font-size: 16px;
+          line-height: 1.5;
+        ">Please authenticate with your Lyzr Agent Studio account to continue using this application.</p>
         <button id="lyzr-studio-login" style="
           display: flex;
           align-items: center;
@@ -334,6 +346,12 @@ class LyzrAgent {
         ">
           Sign Up with Lyzr Agent Studio
         </button>
+        <p style="
+          margin: 24px 0 0;
+          color: #666;
+          font-size: 14px;
+          line-height: 1.5;
+        ">You will be redirected to Lyzr Agent Studio for secure authentication.</p>
       </div>
     </div>
   `;  
@@ -792,22 +810,26 @@ class LyzrAgent {
           <div style="
             display: flex; 
             justify-content: center; 
-            margin-bottom: 32px;
+            margin-bottom: 24px;
           ">
-            <img src="https://studio.lyzr.ai/images/Lyzr-Logo.svg" alt="Lyzr Logo" style="height: 40px;">
+            <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="30" cy="30" r="25" stroke="#6B7280" stroke-width="2" fill="none"/>
+              <rect x="28" y="15" width="4" height="20" rx="2" fill="#6B7280"/>
+              <circle cx="30" cy="42" r="2" fill="#6B7280"/>
+            </svg>
           </div>
           <h2 style="
             margin: 0 0 16px;
             color: #292929;
             font-size: 20px;
             font-weight: 600;
-          ">Session Expired</h2>
+          ">Session Timeout!</h2>
           <p style="
             margin: 0 0 24px;
             color: #666;
             font-size: 16px;
             line-height: 1.5;
-          ">Your session has expired. Please relogin to continue.</p>
+          ">Your authentication session has expired. Please login to continue using the application.</p>
           <button id="lyzr-relogin-button" style="
             display: flex;
             align-items: center;
@@ -824,7 +846,7 @@ class LyzrAgent {
             cursor: pointer;
             transition: all 0.2s ease;
           ">
-            <span id="relogin-text">Relogin with Lyzr Agent Studio</span>
+            <span id="relogin-text">Login with Lyzr Agent Studio</span>
             <span id="relogin-loader" style="display: none; margin-left: 8px;">
               <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="animation: spin 1s linear infinite;">
                 <style>
@@ -837,7 +859,13 @@ class LyzrAgent {
               </svg>
             </span>
           </button>
-        </div>
+          <p style="
+            margin: 24px 0 0;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.5;
+          ">You will be redirected to Lyzr Agent Studio for secure authentication.</p>
+         </div>
       </div>
     `;
     const modalElement = document.createElement('div');

@@ -404,10 +404,10 @@ class LyzrAgent {
   }
 
   private handleAgentStudioLogin() {
-    window.location.href = `${this.agentStudioUrl}/?redirect=${window.location.origin}`    
+    window.location.href = `${this.agentStudioUrl}/?redirect=${window.location.origin}${window.location.pathname}`    
   }
   private handleAgentStudioSignup() {
-    window.location.href = `${this.agentStudioUrlSignup}/?redirect=${window.location.origin}`    
+    window.location.href = `${this.agentStudioUrlSignup}/?redirect=${window.location.origin}${window.location.pathname}`    
   }
 
 

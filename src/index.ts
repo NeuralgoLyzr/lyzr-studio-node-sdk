@@ -1,5 +1,15 @@
 import memberstackDom from '@memberstack/dom';
 
+type LyzrUrlOverrides = {
+  pagosUrl?: string;
+  agentStudioUrl?: string;
+  agentStudioUrlSignup?: string;
+};
+
+const DEFAULT_PAGOS_URL = "https://pagos-prod.studio.lyzr.ai";
+const DEFAULT_AGENT_STUDIO_URL = "https://studio.lyzr.ai/auth/sign-in";
+const DEFAULT_AGENT_STUDIO_URL_SIGNUP = "https://studio.lyzr.ai/auth/sign-up";
+
 class LyzrAgent {
   private memberstack: any;
   private badge: HTMLElement | null = null;
@@ -10,9 +20,9 @@ class LyzrAgent {
   private publicKey: string = ""
   private apiKey: string = ""
   private authStateCallbacks: ((isAuthenticated: boolean) => void)[] = [];
-  private pagosUrl = "https://pagos-prod.studio.lyzr.ai"
-  private agentStudioUrl = "https://studio.lyzr.ai/auth/sign-in"
-  private agentStudioUrlSignup ="https://studio.lyzr.ai/auth/sign-up"
+  private pagosUrl = DEFAULT_PAGOS_URL;
+  private agentStudioUrl = DEFAULT_AGENT_STUDIO_URL;
+  private agentStudioUrlSignup = DEFAULT_AGENT_STUDIO_URL_SIGNUP;
   private badgePosition = {
     x: 'right: 20px',
     y: 'bottom: 20px'
@@ -21,6 +31,13 @@ class LyzrAgent {
   private creditErrorModal: HTMLElement | null = null;
   private reloginModal: HTMLElement | null = null;
   private isLoggingOut = false;
+
+  private applyUrlOverrides(urlOverrides?: LyzrUrlOverrides) {
+    if (!urlOverrides) return;
+    if (urlOverrides.pagosUrl) this.pagosUrl = urlOverrides.pagosUrl;
+    if (urlOverrides.agentStudioUrl) this.agentStudioUrl = urlOverrides.agentStudioUrl;
+    if (urlOverrides.agentStudioUrlSignup) this.agentStudioUrlSignup = urlOverrides.agentStudioUrlSignup;
+  }
 
   constructor(publicKey: string) {
     console.log('Initializing LyzrAgent');
@@ -36,9 +53,11 @@ class LyzrAgent {
     });
   }
 
-  public async init(publicKey: string): Promise<LyzrAgent> {
+  public async init(publicKey: string, urlOverrides?: LyzrUrlOverrides): Promise<LyzrAgent> {
     try {
       console.log('Starting initialization');
+      this.applyUrlOverrides(urlOverrides);
+
       // Create elements first
       this.createLoginModal();
       this.createBadge();
@@ -64,6 +83,10 @@ class LyzrAgent {
       console.error('Error during initialization:', error);
       throw error;
     }
+  }
+
+  public setUrlOverrides(urlOverrides: LyzrUrlOverrides) {
+    this.applyUrlOverrides(urlOverrides);
   }
 
   private async checkBearerAuth() {
@@ -126,14 +149,15 @@ class LyzrAgent {
     };
   }
 
-  public async getKeys(): Promise<any> {
+  public async getKeys(urlOverrides?: LyzrUrlOverrides): Promise<any> {
     try {
       if (!this.token) {
         console.error('No authentication token available');
         return null;
       }
 
-      const response = await fetch(`${this.pagosUrl}/api/v1/keys/`, {
+      const pagosBaseUrl = urlOverrides?.pagosUrl ?? this.pagosUrl;
+      const response = await fetch(`${pagosBaseUrl}/api/v1/keys/`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -160,14 +184,15 @@ class LyzrAgent {
     }
   }
 
-  public async getKeysUser(): Promise<any> {
+  public async getKeysUser(urlOverrides?: LyzrUrlOverrides): Promise<any> {
     try {
       if (!this.token || !this.apiKey) {
         console.error('No authentication token available');
         return null;
       }
 
-      const response = await fetch(`${this.pagosUrl}/api/v1/keys/user?api_key=${this.apiKey}`, {
+      const pagosBaseUrl = urlOverrides?.pagosUrl ?? this.pagosUrl;
+      const response = await fetch(`${pagosBaseUrl}/api/v1/keys/user?api_key=${this.apiKey}`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -502,9 +527,10 @@ class LyzrAgent {
     }
   }
 
-  public async checkCredits(): Promise<void> {
+  public async checkCredits(urlOverrides?: LyzrUrlOverrides): Promise<void> {
     try {
-      const response = await fetch(`${this.pagosUrl}/api/v1/usages/current`, {
+      const pagosBaseUrl = urlOverrides?.pagosUrl ?? this.pagosUrl;
+      const response = await fetch(`${pagosBaseUrl}/api/v1/usages/current`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
